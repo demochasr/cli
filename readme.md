@@ -44,6 +44,8 @@ USAGE
 ...
 ```
 
+Remote server and compose deployment examples are documented in [docs/server-management.md](docs/server-management.md).
+
 ## Commands
 
 ### Authentication
