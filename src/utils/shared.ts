@@ -37,6 +37,47 @@ export type Environment = {
 	compose: any[];
 };
 
+export type Server = {
+	serverId: string;
+	name: string;
+	description?: string;
+	ipAddress: string;
+	port: number;
+	username: string;
+	serverStatus?: string;
+	serverType?: string;
+	appName?: string;
+	sshKeyId?: string;
+};
+
+export type ComposeService = {
+	composeId: string;
+	name: string;
+	appName: string;
+	description?: string;
+	env?: string | null;
+	composeFile?: string;
+	sourceType?: string;
+	composeType?: string;
+	serverId?: string | null;
+	composeStatus?: string;
+	environmentId?: string;
+	createdAt?: string;
+	repository?: string | null;
+	owner?: string | null;
+	branch?: string | null;
+	composePath?: string;
+	deployments?: Array<{
+		deploymentId: string;
+		title?: string | null;
+		description?: string | null;
+		status?: string | null;
+		errorMessage?: string | null;
+		logPath?: string | null;
+		createdAt?: string;
+	}>;
+};
+
 export type Project = {
 	adminId: string;
 	name: string;
@@ -45,23 +86,56 @@ export type Project = {
 	environments?: Environment[];
 };
 
+const buildQueryConfig = (auth: AuthConfig) => ({
+	headers: {
+		"x-api-key": auth.token,
+		"Content-Type": "application/json",
+	},
+});
+
+export const trpcQuery = async <T>(
+	auth: AuthConfig,
+	path: string,
+	input?: Record<string, unknown> | null,
+): Promise<T> => {
+	const response = await axios.get(`${auth.url}/api/trpc/${path}`, {
+		...buildQueryConfig(auth),
+		params: input === undefined ? undefined : {
+			input: JSON.stringify({
+				json: input,
+			}),
+		},
+	});
+
+	return response.data.result.data.json as T;
+};
+
+export const trpcMutation = async <T>(
+	auth: AuthConfig,
+	path: string,
+	input: Record<string, unknown> | null,
+): Promise<T> => {
+	const response = await axios.post(
+		`${auth.url}/api/trpc/${path}`,
+		{
+			json: input,
+		},
+		buildQueryConfig(auth),
+	);
+
+	return response.data.result.data.json as T;
+};
+
 export const getProjects = async (
 	auth: AuthConfig,
 	command: Command,
 ): Promise<Project[]> => {
 	try {
-		const response = await axios.get(`${auth.url}/api/trpc/project.all`, {
-			headers: {
-				"x-api-key": auth.token,
-				"Content-Type": "application/json",
-			},
-		});
+		const projects = await trpcQuery<Project[]>(auth, "project.all", null);
 
-		if (!response.data.result.data.json) {
+		if (!projects) {
 			command.error(chalk.red("Error fetching projects"));
 		}
-
-		const projects = response.data.result.data.json;
 
 		if (projects.length === 0) {
 			command.log(chalk.yellow("No projects found."));
@@ -84,23 +158,7 @@ export const getProject = async (
 		if (!projectId) {
 			command.error(chalk.red("Project ID is required"));
 		}
-		const response = await axios.get(`${auth.url}/api/trpc/project.one`, {
-			headers: {
-				"x-api-key": auth.token,
-				"Content-Type": "application/json",
-			},
-			params: {
-				input: JSON.stringify({
-					json: { projectId },
-				}),
-			},
-		});
-
-		if (!response.data.result.data.json) {
-			command.error(chalk.red("Error fetching project"));
-		}
-
-		const project = response.data.result.data.json;
+		const project = await trpcQuery<Project>(auth, "project.one", { projectId });
 
 		if (!project) {
 			command.error(chalk.red("Error fetching project"));
@@ -110,5 +168,76 @@ export const getProject = async (
 	} catch (error) {
 		// @ts-expect-error  TODO: Fix this
 		command.error(chalk.red(`Failed to fetch project: ${error.message}`));
+	}
+};
+
+export const getServers = async (
+	auth: AuthConfig,
+	command: Command,
+): Promise<Server[]> => {
+	try {
+		const servers = await trpcQuery<Server[]>(auth, "server.all", null);
+
+		if (!servers) {
+			command.error(chalk.red("Error fetching servers"));
+		}
+
+		if (servers.length === 0) {
+			command.log(chalk.yellow("No servers found."));
+			return [];
+		}
+
+		return servers;
+	} catch (error) {
+		// @ts-expect-error TODO: Fix typing
+		command.error(chalk.red(`Failed to fetch server list: ${error.message}`));
+	}
+};
+
+export const getServer = async (
+	auth: AuthConfig,
+	command: Command,
+	serverId: string | undefined,
+): Promise<Server> => {
+	try {
+		if (!serverId) {
+			command.error(chalk.red("Server ID is required"));
+		}
+
+		const server = await trpcQuery<Server>(auth, "server.one", { serverId });
+
+		if (!server) {
+			command.error(chalk.red("Error fetching server"));
+		}
+
+		return server;
+	} catch (error) {
+		// @ts-expect-error TODO: Fix typing
+		command.error(chalk.red(`Failed to fetch server: ${error.message}`));
+	}
+};
+
+export const getCompose = async (
+	auth: AuthConfig,
+	command: Command,
+	composeId: string | undefined,
+): Promise<ComposeService> => {
+	try {
+		if (!composeId) {
+			command.error(chalk.red("Compose ID is required"));
+		}
+
+		const compose = await trpcQuery<ComposeService>(auth, "compose.one", {
+			composeId,
+		});
+
+		if (!compose) {
+			command.error(chalk.red("Error fetching compose service"));
+		}
+
+		return compose;
+	} catch (error) {
+		// @ts-expect-error TODO: Fix typing
+		command.error(chalk.red(`Failed to fetch compose service: ${error.message}`));
 	}
 };

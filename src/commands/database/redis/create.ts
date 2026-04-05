@@ -57,6 +57,7 @@ export default class DatabaseRedisCreate extends Command {
 		const { flags } = await this.parse(DatabaseRedisCreate);
 		let { 
 			projectId, 
+			environmentId,
 			name, 
 			description, 
 			databasePassword,

@@ -59,6 +59,11 @@ export default class EnvPush extends Command {
         const projectId = project.projectId;
         const projectSelected = await getProject(projectId, auth, this);
 
+        if (!projectSelected.environments?.length) {
+            this.error(chalk.yellow("No environments found in this project."));
+            return;
+        }
+
         const {environment} = await inquirer.prompt<any>([
             {
                 choices: projectSelected.environments.map((environment: any) => ({

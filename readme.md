@@ -57,6 +57,11 @@ USAGE
 - `dokploy project:info`: Get information about an existing project.
 - `dokploy project:list`: List all projects.
 
+### Remote Server Management
+
+- `dokploy server:list`: List Dokploy servers, including remote deployment nodes.
+- `dokploy server:info`: Show details for one Dokploy server.
+
 ### Environment Management
 
 - `dokploy environment:create`: Create a new environment.
@@ -68,6 +73,13 @@ USAGE
 - `dokploy app:delete`: Delete an existing application.
 - `dokploy app:deploy`: Deploy an application.
 - `dokploy app:stop`: Stop a running application.
+
+### Compose Management
+
+- `dokploy compose:create`: Create a Docker Compose service, optionally on a remote server.
+- `dokploy compose:update`: Update a Docker Compose service.
+- `dokploy compose:deploy`: Deploy a Docker Compose service.
+- `dokploy compose:info`: Show details for a Docker Compose service.
 
 ### Enviroment Management
 
